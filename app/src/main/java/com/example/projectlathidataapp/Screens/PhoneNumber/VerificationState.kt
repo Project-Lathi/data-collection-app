@@ -1,7 +1,6 @@
-package com.example.projectlathidataapp.Screens.Login
+package com.example.projectlathidataapp.Screens.PhoneNumber
 
-
-data class RegisterState(
+data class VerificationState(
     val isLoading: Boolean =false,
     val isSuccess: String? ="",
     val isError: String? =""

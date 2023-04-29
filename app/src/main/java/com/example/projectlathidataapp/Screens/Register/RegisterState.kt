@@ -1,6 +1,6 @@
 package com.example.projectlathidataapp.Screens.Register
 
-data class Registerstate(
+data class RegisterState(
     val isLoading: Boolean = false,
     val isSuccess: String? = "",
     val isError: String? = ""

@@ -1,6 +1,7 @@
 package com.example.projectlathidataapp.Screens.Login
 
 
+import android.app.Activity
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
@@ -12,6 +13,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -52,122 +54,158 @@ fun LoginScreen(navController: NavController, viewModel: LoginViewModel = hiltVi
     var password by rememberSaveable {mutableStateOf("")}
     val state = viewModel.loginstate.collectAsState(initial = null)
     val scope = rememberCoroutineScope()
+    var phonenumber by rememberSaveable {mutableStateOf("")}
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
-
+    Column {
         val context = LocalContext.current
-        OutlinedTextField(
-            value = username,
-            onValueChange = {username=it},
-            leadingIcon = { Icon(Icons.Default.Person, contentDescription ="person" , tint = PaleGreen2)},
-            label = { Text(text = "Email")},
-            placeholder = { Text(text = "Enter Email")},
-            modifier = Modifier.fillMaxWidth(),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                textColor = Color.Black,
-                unfocusedLabelColor = Color.Black,
-                focusedLabelColor = Color.Black,
-                placeholderColor = Color.Black,
-                unfocusedBorderColor = Color.Black,
-                focusedBorderColor = Color.Black
+        TopAppBar(
+            title = {
+                Text(text = "Login", color = Color.Black)
+            },
+            backgroundColor = MaterialTheme.colors.primary
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+
+            val context = LocalContext.current
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = "person",
+                        tint = PaleGreen2
+                    )
+                },
+                label = { Text(text = "Email") },
+                placeholder = { Text(text = "Enter Email") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    textColor = Color.Black,
+                    unfocusedLabelColor = Color.Black,
+                    focusedLabelColor = Color.Black,
+                    placeholderColor = Color.Black,
+                    unfocusedBorderColor = Color.Black,
+                    focusedBorderColor = Color.Black
+                )
             )
-        )
-        Spacer(Modifier.height(16.dp))
-        OutlinedTextField(
-            value = password,
-            onValueChange = {password=it},
-            leadingIcon = { Icon(Icons.Default.Info, contentDescription ="person" , tint = PaleGreen2)},
-            label = { Text(text = "Password")},
-            placeholder = { Text(text = "Enter Password")},
-            modifier = Modifier.fillMaxWidth(),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                textColor = Color.Black,
-                unfocusedLabelColor = Color.Black,
-                focusedLabelColor = Color.Black,
-                placeholderColor = Color.Black,
-                unfocusedBorderColor = Color.Black,
-                focusedBorderColor = Color.Black
-            ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            visualTransformation = PasswordVisualTransformation()
-        )
-
-        Button(
-            onClick = {
-                scope.launch {
-                    viewModel.loginUser(username,password)
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 8.dp)
-                .border(BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(8.dp)),
-            contentPadding = PaddingValues(16.dp),
-        )
-        { Text(text = "Login", fontSize = 18.sp)}
-
-
-        Row(modifier=Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center){
-            if (state.value?.isLoading == true){
-                CircularProgressIndicator()
-            }
-        }
-
-
-        LaunchedEffect(key1 = state.value?.isSuccess){
-            scope.launch{
-                if (state.value?.isSuccess?.isNotEmpty()==true){
-                    val success = state.value?.isSuccess
-                    Toast.makeText(context,success,Toast.LENGTH_SHORT).show()
-                    navController.navigate(Screen.Record.route)
-                }
-            }
-        }
-
-
-        LaunchedEffect(key1 = state.value?.isError){
-            scope.launch{
-                if (state.value?.isError?.isNotEmpty()==true){
-                    val error = state.value?.isError
-                    Toast.makeText(context,error,Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-
-
-
-
-        Spacer(Modifier.height(25.dp))
-        Text(
-            buildAnnotatedString {
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Normal)) {
-                    append("Don't have Account")
-                }
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)){
-                    append(" Register")}
-            },
-            color = Color.Blue,
-            fontStyle = FontStyle.Italic,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
-                .wrapContentSize(align = Alignment.Center)
-                .clickable { navController.navigate(Screen.Register.route){
-                    // Clear the back stack and pop up to the root destination
-                    popUpTo(navController.graph.startDestinationId) {
-                        saveState = true
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = "person",
+                        tint = PaleGreen2
+                    )
+                },
+                label = { Text(text = "Password") },
+                placeholder = { Text(text = "Enter Password") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    textColor = Color.Black,
+                    unfocusedLabelColor = Color.Black,
+                    focusedLabelColor = Color.Black,
+                    placeholderColor = Color.Black,
+                    unfocusedBorderColor = Color.Black,
+                    focusedBorderColor = Color.Black
+                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                visualTransformation = PasswordVisualTransformation()
+            )
+            val Context = LocalContext.current
+            Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    scope.launch {
+                        viewModel.loginUser(username,password)
                     }
-                    // Avoid duplicates of the destination in the back stack
-                    launchSingleTop = true
-                    // Restore saved state if possible
-                    restoreState = true
-                } }
-        )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .border(BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(8.dp)),
+                contentPadding = PaddingValues(16.dp),
+            )
+            { Text(text = "Login", fontSize = 18.sp) }
+
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                if (state.value?.isLoading == true) {
+                    CircularProgressIndicator()
+                }
+            }
+
+
+            LaunchedEffect(key1 = state.value?.isSuccess) {
+                scope.launch {
+                    if (state.value?.isSuccess?.isNotEmpty() == true) {
+                        val success = state.value?.isSuccess
+                        Toast.makeText(context, success, Toast.LENGTH_SHORT).show()
+                        navController.navigate(Screen.Record.route)
+                        {
+                            // Clear the back stack and pop up to the root destination
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            // Avoid duplicates of the destination in the back stack
+                            launchSingleTop = true
+                            // Restore saved state if possible
+                            restoreState = true
+                        }
+                    }
+                }
+            }
+
+
+            LaunchedEffect(key1 = state.value?.isError) {
+                scope.launch {
+                    if (state.value?.isError?.isNotEmpty() == true) {
+                        val error = state.value?.isError
+                        Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+
+
+
+            Spacer(Modifier.height(25.dp))
+            Text(
+                buildAnnotatedString {
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Normal)) {
+                        append("Don't have Account")
+                    }
+                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append(" Register")
+                    }
+                },
+                color = Color.Blue,
+                fontStyle = FontStyle.Italic,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+                    .wrapContentSize(align = Alignment.Center)
+                    .clickable {
+                        navController.navigate(Screen.Register.route) {
+                            // Clear the back stack and pop up to the root destination
+                            popUpTo(navController.graph.startDestinationId) {
+                                saveState = true
+                            }
+                            // Avoid duplicates of the destination in the back stack
+                            launchSingleTop = true
+                            // Restore saved state if possible
+                            restoreState = true
+                        }
+                    }
+            )
+        }
     }
 }
 

@@ -1,5 +1,6 @@
 package com.example.projectlathidataapp.Screens.Login
 
+import android.app.Activity
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.projectlathidataapp.Data.AuthRepository
@@ -16,22 +17,24 @@ class LoginViewModel @Inject constructor(
     private val repository: AuthRepository
 ):ViewModel (){
 
-    val _loginstate = Channel<RegisterState>()
+    val _loginstate = Channel<LoginState>()
     val loginstate = _loginstate.receiveAsFlow()
 
     fun loginUser(email:String, password:String)=viewModelScope.launch {
         repository.loginuser(email,password).collect{result ->
             when(result){
                 is Resource.Success->{
-                    _loginstate.send(RegisterState(isSuccess = "Login Successful"))
+                    _loginstate.send(LoginState(isSuccess = "Login Successful"))
                 }
                 is Resource.Loading ->{
-                    _loginstate.send(RegisterState(isLoading = true))
+                    _loginstate.send(LoginState(isLoading = true))
                 }
                 is Resource.Error ->{
-                    _loginstate.send(RegisterState(isError = result.message))
+                    _loginstate.send(LoginState(isError = result.message))
                 }
             }
         }
     }
+
+
 }

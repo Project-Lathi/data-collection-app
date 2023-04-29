@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                         navController = rememberNavController()
                         SetNavGraph(navController = navController)
+
                     }
                 }
             }

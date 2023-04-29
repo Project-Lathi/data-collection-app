@@ -18,6 +18,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.projectlathidataapp.Screen
 import com.example.projectlathidataapp.ui.theme.ProjectLathiDataAppTheme
+import com.google.firebase.auth.FirebaseAuth
 
 @Preview(showBackground = true)
 @Composable
@@ -28,36 +29,49 @@ fun DefaultPreview() {
 }
 @Composable
 fun SplashScreen(navController: NavController) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
 
-        ){
-        val context = LocalContext.current// we can't use context directly in composable function hence we need this
-        Button(
-            onClick = { navController.navigate(Screen.Login.route) },
+    if (FirebaseAuth.getInstance().currentUser != null) {
+        navController.navigate(Screen.Record.route)
+    }
+    else
+    {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp)
-                .border(BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(8.dp)),
-            contentPadding = PaddingValues(16.dp),
-        ) {
-            Text(text = "Login")
-        }
-        Spacer(Modifier.height(16.dp))// space between buttons
+                .fillMaxSize()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
 
-        Button(
-            onClick = { navController.navigate(Screen.Register.route) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp)
-                .border(BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(8.dp)),
-            contentPadding = PaddingValues(16.dp),
-        ) {
-            Text(text = "Register")
+            ){
+            val context = LocalContext.current// we can't use context directly in composable function hence we need this
+            Button(
+                onClick = { navController.navigate(Screen.PhoneNumber.route) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp)
+                    .border(BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(8.dp)),
+                contentPadding = PaddingValues(16.dp),
+            ) {
+                Text(text = "Continue with Phone Number")
+            }
+            Spacer(Modifier.height(16.dp))// space between buttons
+            Text(
+                text = "or",
+                modifier = Modifier.padding(horizontal = 8.dp)
+                    .wrapContentSize(align = Alignment.Center)
+            )
+            Spacer(Modifier.height(16.dp))// space between buttons
+            Button(
+                onClick = { navController.navigate(Screen.Register.route) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp)
+                    .border(BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(8.dp)),
+                contentPadding = PaddingValues(16.dp),
+            ) {
+                Text(text = "Continue with Mail id")
+            }
         }
     }
+
 }
