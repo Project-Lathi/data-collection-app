@@ -5,3 +5,7 @@ data class RegisterState(
     val isSuccess: String? = "",
     val isError: String? = ""
 )
+
+data class userData(
+    val Email:String
+)
