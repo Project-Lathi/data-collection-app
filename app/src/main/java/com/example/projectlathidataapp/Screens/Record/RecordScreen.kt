@@ -4,9 +4,12 @@ package com.example.projectlathidataapp.Screens.Record
 import android.Manifest
 import android.app.Activity
 import android.content.ContentValues.TAG
+import android.media.session.PlaybackState
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,8 +30,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import androidx.compose.runtime.*
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.core.app.ActivityCompat
+import androidx.core.content.FileProvider
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.toObject
@@ -36,6 +41,12 @@ import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.tasks.await
 import java.io.File
 import androidx.lifecycle.viewModelScope
+import com.example.projectlathidataapp.ui.theme.PaleGreen2
+import com.google.firebase.FirebaseApp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 @Preview(showBackground = true)
@@ -55,22 +66,6 @@ fun RecordScreen(navController: NavController) {
     var audioFile by remember { mutableStateOf<File?>(null) }
 
 
-
-
-
-//    var userName by remember { mutableStateOf("") }
-//    val user = FirebaseAuth.getInstance().currentUser!!.uid
-//    val db = Firebase.firestore
-//
-//    val docRef = db.collection("Users").document(user)
-//    docRef.get().addOnSuccessListener{document->
-//        if(document!=null)
-//        {
-//            userName = document.getString("email") ?: ""
-//        }
-//    }
-
-
     LaunchedEffect(Unit) {
         ActivityCompat.requestPermissions(
             context as Activity,
@@ -78,9 +73,6 @@ fun RecordScreen(navController: NavController) {
             0
         )
     }
-
-
-
 
     Column {
         val context = LocalContext.current
@@ -100,50 +92,107 @@ fun RecordScreen(navController: NavController) {
 
             ) {
 
-                Button(onClick = {
-                    File(context.cacheDir, "audio.mp3").also {
-                        recorder.start(it)
-                        audioFile = it
+            var isRecording by remember { mutableStateOf(false) }
+            var timeLeftInSeconds by remember { mutableStateOf(60) }
+
+            val scope = rememberCoroutineScope()
+
+            LaunchedEffect(isRecording) {
+                if (isRecording) {
+                    while (timeLeftInSeconds > 0) {
+                        delay(1000)
+                        timeLeftInSeconds--
                     }
-                }) {
-                    Text(text = "Start recording")
-                }
-                Button(onClick = {
+                    isRecording = false
                     recorder.stop()
-                }) {
-                    Text(text = "Stop recording")
+                    // Add code here to upload the recorded audio to Firebase
+                    timeLeftInSeconds = 60
                 }
-                Button(onClick = {
-                    player.playFile(audioFile ?: return@Button)
-                }) {
-                    Text(text = "Play")
-                }
-                Button(onClick = {
-                    player.stop()
-                }) {
-                    Text(text = "Stop playing")
-                }
+            }
+            AudioRecordingVisualizer(isRecording = isRecording)
+            Button(
+                onClick = {
+                    if (isRecording) {
+                        recorder.stop()
+                        Toast.makeText(context,"Recording Stopped", Toast.LENGTH_SHORT).show()
+                        isRecording = false
+                        timeLeftInSeconds = 60 // reset timer when recording is stopped
+                    } else {
+                        scope.launch {
+                            isRecording = true
+                            File(context.cacheDir, "audio.mp3").also {
+                                recorder.start(it)
+                                Toast.makeText(context,"Recording Started", Toast.LENGTH_SHORT).show()
+                                audioFile = it
+                            }
+                        }
+                    }
+                },modifier = Modifier
+                    .padding(top = 10.dp)
+                    .border(BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(8.dp)),contentPadding = PaddingValues(16.dp),
+            ) {
+                val buttonText = if (isRecording) "Stop recording" else "Start recording"
+                val buttonTextWithTime = "$buttonText ($timeLeftInSeconds s)"
+                Text(text = buttonTextWithTime, fontWeight = FontWeight.Bold)
+            }
 
 
 
-    //            Text(
-    //                text = "Hello, $userName!",
-    //                fontSize = 24.sp,
-    //                fontWeight = FontWeight.Bold,
-    //                modifier = Modifier.padding(bottom = 16.dp)
-    //            )
+            var isPlaying by remember { mutableStateOf(false) }
+            Button(
+                onClick = {
+                    if (isPlaying) {
+                        player.stop()
+                        Toast.makeText(context,"Playing Audio", Toast.LENGTH_SHORT).show()
+                        isPlaying = false
+                    } else {
+                        player.playFile(audioFile ?: return@Button)
+                        Toast.makeText(context,"Playing Audio Stopped", Toast.LENGTH_SHORT).show()
+                        isPlaying = true
+                    }
+                },modifier = Modifier
+                    .padding(top = 10.dp)
+                    .border(BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(8.dp)),contentPadding = PaddingValues(16.dp),
+            ) {
+                Text(text = if (isPlaying) "Stop playing" else "Start playing", fontWeight = FontWeight.Bold)
+            }
 
-//            Spacer(Modifier.height(16.dp))
-//            Button(onClick = {
-//                audioFile?.let { file ->
-//                    viewModelScope.launch {
-//                        uploadFileToStorage(file, navController)
-//                    }
-//                }
-//            }) {
-//                Text(text = "Upload")
-//            }
 
+
+
+
+
+            var uploading by remember { mutableStateOf(false) }
+            FirebaseApp.initializeApp(context)
+            val storage = Firebase.storage
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+            val filename = "audio_$timestamp.mp3"
+            Button(
+                onClick = {
+                    val storageRef = storage.reference
+                    val audioRef = storageRef.child("audio.mp3/$filename")
+                    val audioUri = Uri.fromFile(audioFile ?: return@Button)
+                    val uploadTask = audioRef.putFile(audioUri)
+
+                    uploading = true
+                    uploadTask.addOnCompleteListener { task ->
+                        uploading = false
+                        if (task.isSuccessful) {
+                            Toast.makeText(context, "File uploaded successfully!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "File upload failed", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },modifier = Modifier
+                    .padding(top = 10.dp)
+                    .border(BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(8.dp)),contentPadding = PaddingValues(16.dp),
+            ) {
+                Text(text = "Upload", fontWeight = FontWeight.Bold)
+            }
+
+            if (uploading) {
+                CircularProgressIndicator()
+            }
 
 
             Spacer(Modifier.height(16.dp))
@@ -168,37 +217,69 @@ fun RecordScreen(navController: NavController) {
                     .border(BorderStroke(1.dp, Color.Black), shape = RoundedCornerShape(8.dp)),
                 contentPadding = PaddingValues(16.dp),
             )
-            { Text(text = "Sign Out", fontSize = 18.sp) }
+            { Text(text = "Sign Out", fontSize = 18.sp, fontWeight = FontWeight.Bold) }
         }
     }
 }
 
 
-//
-//private suspend fun uploadFileToStorage(file: File, navController: NavController) {
-//    val storage = Firebase.storage
-//    val storageRef = storage.reference
-//    val user = FirebaseAuth.getInstance().currentUser!!
-//    val audioRef = storageRef.child("users/${user.uid}/audio.mp3")
-//    val uploadTask = audioRef.putFile(Uri.fromFile(file))
-//    uploadTask.await()
-//    val downloadUrl = audioRef.downloadUrl.await().toString()
-//    saveAudioDownloadUrlToFirestore(user.uid, downloadUrl,navController)
-//}
-//
-//private suspend fun saveAudioDownloadUrlToFirestore(uid: String, downloadUrl: String,navController: NavController) {
-//    val firestore = Firebase.firestore
-//    val userDocRef = firestore.collection("users").document(uid)
-//    userDocRef.update("audioUrl", downloadUrl).await()
-//    navController.popBackStack()
-//}
 
 
-//@Composable
-//fun UserProfileName(uid: String) {
-//    val firestore = Firebase.firestore
-//    val userDocRef = firestore.collection("Users").document(uid)
-//    val userProfileName by rememberFirestoreDocument(userDocRef)
-//
-//    Text("User profile name: $userDocRef")
-//}
+@Composable
+fun AudioRecordingVisualizer(isRecording: Boolean) {
+    val maxAmplitude = 32767 // the maximum value of amplitude from MediaRecorder
+
+    val amplitudes = remember { mutableStateListOf<Float>() }
+    var isRunning by remember { mutableStateOf(false) }
+
+    val amplitudeScope = rememberCoroutineScope()
+
+    fun startVisualizer() {
+        isRunning = true
+
+        amplitudeScope.launch {
+            while (isRunning) {
+                val amplitude = (0..maxAmplitude).random().toFloat()
+                amplitudes.add(amplitude)
+
+                if (amplitudes.size > 50) {
+                    amplitudes.removeFirst()
+                }
+
+                delay(50)
+            }
+        }
+    }
+
+    fun stopVisualizer() {
+        isRunning = false
+        amplitudes.clear()
+    }
+
+    if (isRecording) {
+        LaunchedEffect(isRecording) {
+            startVisualizer()
+        }
+    } else {
+        stopVisualizer()
+    }
+
+    Canvas(modifier = Modifier.fillMaxWidth().height(100.dp)) {
+        val amplitudeSize = amplitudes.size
+        val graphWidth = size.width / amplitudeSize.toFloat()
+
+        amplitudes.forEachIndexed { index, amplitude ->
+            val amplitudeHeight = amplitude / maxAmplitude * size.height
+            val x = graphWidth * index
+            val y = size.height - amplitudeHeight
+
+            drawLine(
+                color = PaleGreen2,
+                start = Offset(x, size.height),
+                end = Offset(x, y),
+                strokeWidth = 4.dp.toPx()
+            )
+        }
+    }
+}
+
